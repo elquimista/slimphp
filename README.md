@@ -1,4 +1,4 @@
-# SlimPHP - template compiler for PHP5.4+
+# SlimPHP - template compiler for PHP 5.4+
 
 *SlimPHP* is a high performance template compiler heavily influenced by [Slim](http://slim-lang.com) and [HAML](http://haml-lang.com)
 and implemented for PHP 5.4 or greater.
@@ -91,13 +91,7 @@ Another examples:
 
 will become `<input type="submit" value="Send" />`.
 
-You can even add you own autotags with:
-
-	$parser->setAutotag('input:progress', 'input', array('type'=>'text', class=>'progress-bar'));
-
-that will expands to `<input type="text" class="progress-bar" />`.
-
-It also supports new HTML5 tags (`input:email` => `<input type="email"/>`).
+It also supports new HTML5 tags such as (`input:email` => `<input type="email"/>`).
 
 ### Tag Text
 
@@ -184,24 +178,23 @@ SlimPHP supports sharp comments (`//- COMMENT`). So SlimPHP block:
 	//- SLIMPHP
 	- $foo = "<script>";
 	p
-	//- ##### COMMENTS ARE SUPER! ######
-	  - switch ($foo)
-	    -case 2
+	  - switch ($foo):
+	    - case 2:
 	      p.foo= $foo
-	//-    - case 'strong'
-	  //-      strong#name= $foo * 2
-	    -   case 5
+		//- - case 'strong':
+		  //- strong#name= $foo * 2
+	    - case 5:
 	      p some text
 
 will be compiled into:
 
 	<?php $foo = "<script>"; ?>
 	<p>
-	  <?php switch ($foo) ?>
-	    <?php case 2 ?>
+	  <?php switch ($foo): ?>
+	    <?php case 2: ?>
 	      <p class="foo"><?= $foo ?></p>
 	    <?php break; ?>
-	    <?php case 5 ?>
+	    <?php case 5: ?>
 	      <p>some text</p>
 	    <?php break; ?>
 	  <?php endswitch; ?>
