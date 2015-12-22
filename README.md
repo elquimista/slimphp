@@ -30,7 +30,7 @@ and implemented for PHP 5.4 or greater.
     
     // Initialize parser & SlimPHP
     $parser = new Parser(new Lexer());
-    $slim   = new SlimLang($parser, $dumper);
+    $slim   = new SlimPHP($parser, $dumper);
 	
 	// Parse a template (both string & file containers)
     echo $slim->render($template);
