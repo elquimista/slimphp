@@ -3,6 +3,7 @@
 namespace clthck\SlimPHP;
 
 use clthck\SlimPHP\Exception\Exception;
+use clthck\SlimPHP\Exception\ParseException;
 
 use clthck\SlimPHP\Lexer\LexerInterface;
 
@@ -56,7 +57,10 @@ class Parser
             if ('newline' === $this->lexer->predictToken()->type) {
                 $this->lexer->getAdvancedToken();
             } else {
-                $node->addChild($this->parseExpression());
+                //$node->addChild($this->parseExpression());
+                if ($child = $this->parseExpression()) {
+                    $node->addChild($child);
+                }
             }
         }
 
@@ -116,6 +120,12 @@ class Parser
                 $this->lexer->deferToken($token);
 
                 return $this->parseExpression();
+            case 'outdent':
+                $this->lexer->getAdvancedToken();
+                return null;
+            default:
+                throw new ParseException($this->lexer->getCurrentLine());
+                return null;
         }
     }
 

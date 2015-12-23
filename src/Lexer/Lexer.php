@@ -3,6 +3,7 @@
 namespace clthck\SlimPHP\Lexer;
 
 use clthck\SlimPHP\Exception\Exception;
+use clthck\SlimPHP\Exception\ParseException;
 
 /*
  * This file is part of the SlimPHP package.
@@ -20,8 +21,22 @@ class Lexer implements LexerInterface
     protected $input;
     protected $deferredObjects   = array();
     protected $lastIndents      = 0;
+    protected $indentCache      = [0];
     protected $lineno           = 1;
     protected $stash            = array();
+
+    protected $options          = [
+        'tabSize'           => 2,
+    ];
+
+    /**
+     * Lexer constructor
+     * @param array $options
+     */
+    public function __construct(array $options = [])
+    {
+        $this->options = array_merge($this->options, $options);
+    }
 
     /**
      * Set lexer input. 
@@ -30,9 +45,10 @@ class Lexer implements LexerInterface
      */
     public function setInput($input)
     {
-        $this->input            = preg_replace(array('/\r\n|\r/', '/\t/'), array("\n", '  '), $input);
+        $this->input            = trim(preg_replace(['/\r\n|\r/', '/\t/'], ["\n", str_repeat(' ', $this->options['tabSize'])], $input));
         $this->deferredObjects  = array();
         $this->lastIndents      = 0;
+        $this->indentCache      = [0];
         $this->lineno           = 1;
         $this->stash            = array();
     }
@@ -181,7 +197,7 @@ class Lexer implements LexerInterface
         if (preg_match($regex, $this->input, $matches)) {
             $this->consumeInput(mb_strlen($matches[0]));
 
-            return $this->takeToken($type, $matches[1]);
+            return $this->takeToken($type, count($matches) > 1 ? $matches[1] : null);
         }
     }
 
@@ -196,7 +212,10 @@ class Lexer implements LexerInterface
             return;
         }
 
-        return $this->lastIndents-- > 0 ? $this->takeToken('outdent') : $this->takeToken('eos');
+        $token = $this->lastIndents > 0 ? $this->takeToken('outdent') : $this->takeToken('eos');
+        array_pop($this->indentCache);
+        $this->lastIndents = end($this->indentCache);
+        return $token;
     }
 
     /**
@@ -312,7 +331,7 @@ class Lexer implements LexerInterface
             $this->consumeInput($index + 1);
             $token->attributes = array();
 
-            foreach ($attributes as $i => $pair) {
+            foreach ($attributes as $pair) {
                 $pair = preg_replace('/^ *| *$/', '', $pair);
                 $colon = mb_strpos($pair, ':');
                 $equal = mb_strpos($pair, '=');
@@ -360,6 +379,16 @@ class Lexer implements LexerInterface
     }
 
     /**
+     * isValidIndent()
+     * @param $indents
+     * @return bool
+     */
+    protected function isValidIndent($indents)
+    {
+        return in_array($indents, $this->indentCache);
+    }
+
+    /**
      * Scan indentation from input & return it if found. 
      * 
      * @return  Object|null
@@ -373,31 +402,32 @@ class Lexer implements LexerInterface
             $this->consumeInput(mb_strlen($matches[0]));
 
             $token      = $this->takeToken('indent', $matches[1]);
-            $indents    = mb_strlen($token->value) / 2;
+            $indents    = mb_strlen($token->value);
 
+            if ($indents > $this->lastIndents) {
+                if (!in_array($indents, $this->indentCache)) {
+                    $this->indentCache = array_merge($this->indentCache, [$indents]);
+                }
+            }
 
             if (mb_strlen($this->input) && "\n" === $this->input[0]) {
                 $token->type = 'newline';
 
                 return $token;
-            } elseif (0 !== $indents % 1) {
-                throw new Exception(sprintf(
-                    'Invalid indentation found. Spaces count must be a multiple of two, but %d got.'
-                  , mb_strlen($token->value)
-                ));
             } elseif ($this->lastIndents === $indents) {
                 $token->type = 'newline';
-            } elseif ($this->lastIndents + 1 < $indents) {
-                throw new Exception(sprintf(
-                    'Invalid indentation found. Got %d, but expected %d.'
-                  , $indents
-                  , $this->lastIndents + 1
-                ));
             } elseif ($this->lastIndents > $indents) {
-                $count = $this->lastIndents - $indents;
-                $token->type = 'outdent';
-                while (--$count) {
-                    $this->deferToken($this->takeToken('outdent'));
+
+                if ($this->isValidIndent($indents)) {
+                    $count = array_search($this->lastIndents, $this->indentCache) - array_search($indents, $this->indentCache);
+                    $token->type = 'outdent';
+                    while (--$count) {
+                        array_pop($this->indentCache);
+                        $this->deferToken($this->takeToken('outdent'));
+                    }
+                }
+                else {
+                    throw new ParseException($this->lineno);
                 }
             }
 

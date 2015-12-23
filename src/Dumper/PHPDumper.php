@@ -63,6 +63,19 @@ class PHPDumper implements DumperInterface
     );
     protected $filters = array();
 
+    protected $options = [
+        'tabSize'           => 2,
+    ];
+
+    /**
+     * PHPDumper constructor
+     * @param array $options
+     */
+    public function __construct(array $options = [])
+    {
+        $this->options = array_merge($this->options, $options);
+    }
+
     /**
      * Dump node to string.
      * 
@@ -165,11 +178,15 @@ class PHPDumper implements DumperInterface
             $visitor->visit($node);
         }
 
-        if (!isset($this->doctypes[$node->getVersion()])) {
-            throw new Exception(sprintf('Unknown doctype %s', $node->getVersion()));
+        $doctypeVersion = $node->getVersion();
+        if (empty(trim($doctypeVersion))) {
+            $doctypeVersion = 'transitional';
+        }
+        if (!isset($this->doctypes[$doctypeVersion])) {
+            throw new Exception(sprintf('Unknown doctype %s', $doctypeVersion));
         }
 
-        return $this->doctypes[$node->getVersion()];
+        return $this->doctypes[$doctypeVersion];
     }
 
     /**
@@ -182,7 +199,8 @@ class PHPDumper implements DumperInterface
      */
     protected function dumpTag(TagNode $node, $level = 0)
     {
-        $html = str_repeat('  ', $level);
+        $tabSize = $this->options['tabSize'];
+        $html = str_repeat(' ', $level * $tabSize);
 
         foreach ($this->visitors['tag'] as $visitor) {
             $visitor->visit($node);
@@ -205,14 +223,14 @@ class PHPDumper implements DumperInterface
 
             if ($node->getCode()) {
                 if (count($node->getChilds())) {
-                    $html .= "\n" . str_repeat('  ', $level + 1) . $this->dumpCode($node->getCode());
+                    $html .= "\n" . str_repeat(' ', $tabSize * ($level + 1)) . $this->dumpCode($node->getCode());
                 } else {
                     $html .= $this->dumpCode($node->getCode());
                 }
             }
             if ($node->getText() && count($node->getText()->getLines())) {
                 if (count($node->getChilds())) {
-                    $html .= "\n" . str_repeat('  ', $level + 1) . $this->dumpText($node->getText());
+                    $html .= "\n" . str_repeat(' ', ($level + 1) * $tabSize) . $this->dumpText($node->getText());
                 } else {
                     $html .= $this->dumpText($node->getText());
                 }
@@ -225,7 +243,7 @@ class PHPDumper implements DumperInterface
                     $this->nextIsIf[$level + 1] = isset($childs[$i + 1]) && ($childs[$i + 1] instanceof CodeNode);
                     $html .= $this->dumpNode($child, $level + 1);
                 }
-                $html .= "\n" . str_repeat('  ', $level);
+                $html .= "\n" . str_repeat(' ', $level * $tabSize);
             }
 
             return $html . '</' . $node->getName() . '>';
@@ -242,7 +260,7 @@ class PHPDumper implements DumperInterface
      */
     protected function dumpText(TextNode $node, $level = 0)
     {
-        $indent = str_repeat('  ', $level);
+        $indent = str_repeat(' ', $level * $this->options['tabSize']);
 
         foreach ($this->visitors['text'] as $visitor) {
             $visitor->visit($node);
@@ -265,28 +283,30 @@ class PHPDumper implements DumperInterface
             $visitor->visit($node);
         }
 
+        $tabSize = $this->options['tabSize'];
+
         if ($node->isBuffered()) {
-            $html = str_repeat('  ', $level);
+            $html = str_repeat(' ', $level * $tabSize);
 
             if ($node->getBlock()) {
                 $string = $node->getString();
                 $beg    = "<!--\n";
-                $end    = "\n" . str_repeat('  ', $level) . '-->';
+                $end    = "\n" . str_repeat(' ', $level * $tabSize) . '-->';
 
                 if (preg_match('/^\[ *if/', $string)) {
                     $beg = '<!--' . $string . ">\n";
-                    $end = "\n" . str_repeat('  ', $level) . '<![endif]-->';
+                    $end = "\n" . str_repeat(' ', $level * $tabSize) . '<![endif]-->';
                     $string = '';
                 }
 
                 $html .= $beg;
                 if ('' !== $string) {
-                    $html .= str_repeat('  ', $level + 1) . $string . "\n";
+                    $html .= str_repeat(' ', ($level + 1) * $tabSize) . $string . "\n";
                 }
                 $html .= $this->dumpBlock($node->getBlock(), $level + 1);
                 $html .= $end;
             } else {
-                $html = str_repeat('  ', $level) . '<!-- ' . $node->getString() . ' -->';
+                $html = str_repeat(' ', $level * $tabSize) . '<!-- ' . $node->getString() . ' -->';
             }
 
             return $html;
@@ -305,7 +325,8 @@ class PHPDumper implements DumperInterface
      */
     protected function dumpCode(CodeNode $node, $level = 0)
     {
-        $html = str_repeat('  ', $level);
+        $tabSize = $this->options['tabSize'];
+        $html = str_repeat(' ', $level * $tabSize);
 
         foreach ($this->visitors['code'] as $visitor) {
             $visitor->visit($node);
@@ -317,12 +338,12 @@ class PHPDumper implements DumperInterface
             } else {
                 $begin = '<?php ' . preg_replace('/^ +/', '', $node->getCode()) . " { ?>\n";
             }
-            $end = "\n" . str_repeat('  ', $level) . '<?php } ?>';
+            $end = "\n" . str_repeat(' ', $level * $tabSize) . '<?php } ?>';
 
             foreach ($this->codes as $regex => $ending) {
                 if (preg_match($regex, $node->getCode())) {
                     $begin  = '<?php ' . preg_replace('/^ +| +$/', '', $node->getCode()) . " ?>\n";
-                    $end    = "\n" . str_repeat('  ', $level) . '<?php ' . $ending . '; ?>';
+                    $end    = "\n" . str_repeat(' ', $level * $tabSize) . '<?php ' . $ending . '; ?>';
                     if ('endif' === $ending && isset($this->nextIsIf[$level]) && $this->nextIsIf[$level]) {
                         $end = '';
                     }
@@ -363,7 +384,7 @@ class PHPDumper implements DumperInterface
             $text = $this->dumpNode($node->getBlock(), $level + 1);
         }
 
-        return $this->filters[$node->getName()]->filter($text, $node->getAttributes(), str_repeat('  ', $level));
+        return $this->filters[$node->getName()]->filter($text, $node->getAttributes(), str_repeat(' ', $level * $this->options['tabSize']));
     }
 
     /**
