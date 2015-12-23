@@ -1,14 +1,13 @@
 # SlimPHP - template compiler for PHP 5.4+
 
-*SlimPHP* is a high performance template compiler heavily influenced by [Slim](http://slim-lang.com) and [HAML](http://haml-lang.com)
-and implemented for PHP 5.4 or greater.
+*SlimPHP* is a high performance template compiler heavily influenced by [Slim](http://slim-lang.com), which is implemented for PHP 5.4 or greater.
 
 ## Features
 
   - high performance parser
   - great readability
   - contextual error reporting at compile &amp; run time
-  - html 5 mode (using the _!!! 5_ doctype)
+  - HTML5 mode (using the _doctype html_)
   - combine dynamic and static tag classes
   - no tag prefix
   - clear & beautiful HTML output
@@ -21,7 +20,9 @@ and implemented for PHP 5.4 or greater.
 
 ## Public API
 
-    $dumper = new PHPDumper();
+    $dumper = new PHPDumper([
+    	'tabSize' => 4					// Tab size for output. Default value: 2
+	]);
     $dumper->registerVisitor('tag', new AutotagsVisitor());
     $dumper->registerFilter('javascript', new JavaScriptFilter());
     $dumper->registerFilter('cdata', new CDATAFilter());
@@ -29,10 +30,12 @@ and implemented for PHP 5.4 or greater.
     $dumper->registerFilter('style', new CSSFilter());
     
     // Initialize parser & SlimPHP
-    $parser = new Parser(new Lexer());
+    $parser = new Parser(new Lexer([
+    	'tabSize' => 2					// Tab size for input. Default value: 2
+	]));
     $slim   = new SlimPHP($parser, $dumper);
 	
-	// Parse a template (both string & file containers)
+	// Parse a template (either filename or content string)
     echo $slim->render($template);
 
 ## Syntax
@@ -43,7 +46,7 @@ and implemented for PHP 5.4 or greater.
 
 ### Indentation
 
-SlimPHP is indentation based, however currently only supports a _2 space_ indent.
+As it's meant to be, SlimPHP supports a _arbitrary length_ indent. Just keep the indent tree consistent throughout the slim template file.
 
 ### Tags
 
@@ -146,28 +149,29 @@ Note: Leading / trailing whitespace is _ignored_ for attr pairs.
 
 ### Doctypes
 
-To add a doctype simply use `!!!` followed by an optional value:
+To add a doctype simply use `doctype` followed by an optional value:
 
-	!!!
+	doctype
 
 Will output the _transitional_ doctype, however:
 
-	!!! 5
+	doctype html (or simply doctype 5)
 
 Will output html 5's doctype. Below are the doctypes
 defined by default, which can easily be extended:
 
 	$doctypes = array(
-	       '5' => '<!DOCTYPE html>',
-	       'xml' => '<?xml version="1.0" encoding="utf-8" ?>',
-	       'default' => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
-	       'transitional' => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
-	       'strict' => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">',
-	       'frameset' => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">',
-	       '1.1' => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">',
-	       'basic' => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN" "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">',
-	       'mobile' => '<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" "http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">'
-	   );
+		'xml'               => '<?xml version="1.0" encoding="utf-8" ?>',
+		'xml ISO-8859-1'    => '<?xml version="1.0" encoding="iso-8859-1" ?>',
+		'html'          => '<!DOCTYPE html>',
+		'5'             => '<!DOCTYPE html>',
+		'1.1'           => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">',
+		'strict'        => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">',
+		'frameset'      => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">',
+		'mobile'        => '<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" "http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">',
+		'basic'         => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN" "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">',
+		'transitional'  => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
+	);
 
 ## Comments
 

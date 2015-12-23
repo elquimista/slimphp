@@ -2,7 +2,11 @@ src/api
 
 /vendor/
 
-/tests/1
+/tests/1.php
 /tests/index.slim
 /tests/index.ctp
 /composer.lock
+/.vs/
+/*.phpproj
+/*.phpproj.user
+/*.sln

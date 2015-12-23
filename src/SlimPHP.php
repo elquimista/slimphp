@@ -3,6 +3,7 @@
 namespace clthck\SlimPHP;
 
 use clthck\SlimPHP\Exception\Exception;
+use clthck\SlimPHP\Exception\ParseException;
 use clthck\SlimPHP\Lexer\LexerInterface;
 use clthck\SlimPHP\Dumper\DumperInterface;
 
@@ -45,7 +46,22 @@ class SlimPHP
     public function render($input)
     {
         $source = $this->getInputSource($input);
-        $parsed = $this->parser->parse($source);
+
+        try {
+
+            $parsed = $this->parser->parse($source);
+        }
+        catch (ParseException $e) {
+            if (is_file($input)) {
+                throw new Exception(sprintf(
+                    'Malformed indentation, Line %d on %s', $e->getLineNumber(), $input
+                ));
+            } else {
+                throw new Exception(sprintf(
+                    'Malformed indentation, Line %d on input', $e->getLineNumber()
+                ));
+            }
+        }
 
         return $this->dumper->dump($parsed);
     }
