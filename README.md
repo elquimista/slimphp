@@ -155,9 +155,9 @@ To add a doctype simply use `doctype` followed by an optional value:
 
 Will output the _transitional_ doctype, however:
 
-	doctype html (or simply doctype 5)
+`doctype html` (or simply `doctype 5`)
 
-Will output html 5's doctype. Below are the doctypes
+Will output HTML5's doctype. Below are the doctypes
 defined by default, which can easily be extended:
 
 	$doctypes = array(
