@@ -136,10 +136,10 @@ class Lexer implements LexerInterface
         $scanners = array(
             'getDeferredToken'
           , 'scanEOS'
+          , 'scanDoctype'
           , 'scanTag'
           , 'scanFilter'
           , 'scanCode'
-          , 'scanDoctype'
           , 'scanId'
           , 'scanClass'
           , 'scanAttributes'
@@ -244,7 +244,7 @@ class Lexer implements LexerInterface
      */
     protected function scanDoctype()
     {
-        return $this->scanInput('/^!!! *(\w+)?/', 'doctype');
+        return $this->scanInput('/^doctype *([\w \.\-]+)?/', 'doctype');
     }
 
     /**
