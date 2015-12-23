@@ -1,3 +1,8 @@
 src/api
 
 /vendor/
+
+/tests/1
+/tests/index.slim
+/tests/index.ctp
+/composer.lock
