@@ -210,16 +210,16 @@ defined by default, which can easily be extended:
 
 ### SlimPHP Comments
 
-SlimPHP supports sharp comments (`//- COMMENT`). So SlimPHP block:
+SlimPHP supports sharp comments (`/ COMMENT`). So SlimPHP block:
 
-	//- SLIMPHP
+	/ SLIMPHP
 	- $foo = "<script>";
 	p
 	  - switch ($foo):
 	    - case 2:
 	      p.foo= $foo
-		//- - case 'strong':
-		  //- strong#name= $foo * 2
+		/- case 'strong':
+		  - strong#name= $foo * 2
 	    - case 5:
 	      p some text
 
@@ -227,22 +227,22 @@ will be compiled into:
 
 	<?php $foo = "<script>"; ?>
 	<p>
-	  <?php switch ($foo): ?>
-	    <?php case 2: ?>
-	      <p class="foo"><?= $foo ?></p>
-	    <?php break; ?>
-	    <?php case 5: ?>
-	      <p>some text</p>
-	    <?php break; ?>
-	  <?php endswitch; ?>
+	    <?php switch ($foo): ?>
+	        <?php case 2: ?>
+	            <p class="foo"><?= $foo ?></p>
+	        <?php break; ?>
+	        <?php case 5: ?>
+	            <p>some text</p>
+	        <?php break; ?>
+	    <?php endswitch; ?>
 	</p>
 
 ### HTML Comments
 
-SlimPHP supports HTML comments (`// comment`). So block:
+SlimPHP supports HTML comments (`/! comment`). So block:
 
 	peanutbutterjelly
-	  // This is the peanutbutterjelly element
+	  /! This is the peanutbutterjelly element
 	  | I like sandwiches!
 
 will become:
@@ -254,7 +254,7 @@ will become:
 
 As with multiline comments:
 
-	//
+	/!
 	  p This doesn't render...
 	  div
 	    h1 Because it's commented out!
@@ -272,7 +272,7 @@ that compile to:
 
 Also, SlimPHP supports IE conditional comments, so:
 
-	// [if IE]
+	/! [if IE]
 	  a( href = 'http://www.mozilla.com/en-US/firefox/' )
 	    h1 Get Firefox
 

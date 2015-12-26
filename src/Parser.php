@@ -190,7 +190,14 @@ class Parser
         }
 
         if ('indent' === $this->lexer->predictToken()->type) {
-            $node->setBlock($this->parseBlock());
+            if ($token->buffer) {
+                $node->setBlock($this->parseBlock());
+            }
+            else {
+                $block = new BlockNode($this->lexer->getCurrentLine());
+                $block->addChild($this->parseTextBlock());
+                $node->setBlock($block);
+            }
         }
 
         return $node;

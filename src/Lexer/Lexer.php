@@ -153,11 +153,15 @@ class Lexer implements LexerInterface
     /**
      * Checks if token is a valid verbatim text wrapper or not.
      * 
+     * @param   Object $token
      * @return  bool
      */
     protected function isTokenVerbatimWrapper($token)
     {
         if ($token->type == 'filter' || $token->type == 'pipe') {
+            return true;
+        }
+        if ($token->type == 'comment' && !$token->buffer) {
             return true;
         }
         if ($token->type == 'code' && preg_match("/\\\\$/", $token->value)) {
@@ -194,11 +198,11 @@ class Lexer implements LexerInterface
           , 'scanHtmlLikeStyle'
           , 'scanFilter'
           , 'scanCode'
+          , 'scanComment'
           , 'scanId'
           , 'scanClass'
           , 'scanAttributes'
           , 'scanIndentation'
-          , 'scanComment'
           , 'scanText'              // inline text node
         );
 
@@ -278,10 +282,10 @@ class Lexer implements LexerInterface
     {
         $matches = array();
 
-        if (preg_match('/^ *\/\/(-)?([^\n]+)?/', $this->input, $matches)) {
+        if (preg_match('/^ *\/(\!)?([^\n]+)?/', $this->input, $matches)) {
             $this->consumeInput(mb_strlen($matches[0]));
             $token = $this->takeToken('comment', isset($matches[2]) ? $matches[2] : '');
-            $token->buffer = !isset($matches[1]) || '-' !== $matches[1];
+            $token->buffer = isset($matches[1]) && $matches[1] == '!';
 
             return $token;
         }
