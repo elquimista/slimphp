@@ -4,6 +4,7 @@ namespace clthck\SlimPHP;
 
 use clthck\SlimPHP\Exception\Exception;
 use clthck\SlimPHP\Exception\ParseException;
+use clthck\SlimPHP\Exception\UnknownTokenException;
 use clthck\SlimPHP\Lexer\LexerInterface;
 use clthck\SlimPHP\Dumper\DumperInterface;
 
@@ -59,6 +60,17 @@ class SlimPHP
             } else {
                 throw new Exception(sprintf(
                     'Malformed indentation, Line %d on input', $e->getLineNumber()
+                ));
+            }
+        }
+        catch (UnknownTokenException $e) {
+            if (is_file($input)) {
+                throw new Exception(sprintf(
+                    'Unknown token found, Line %d on %s', $e->getLineNumber(), $input
+                ));
+            } else {
+                throw new Exception(sprintf(
+                    'Unknown token found, Line %d on input', $e->getLineNumber()
                 ));
             }
         }
