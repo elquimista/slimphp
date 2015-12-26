@@ -4,6 +4,7 @@ namespace clthck\SlimPHP;
 
 use clthck\SlimPHP\Exception\Exception;
 use clthck\SlimPHP\Exception\ParseException;
+use clthck\SlimPHP\Exception\UnknownTokenException;
 
 use clthck\SlimPHP\Lexer\LexerInterface;
 
@@ -57,7 +58,6 @@ class Parser
             if ('newline' === $this->lexer->predictToken()->type) {
                 $this->lexer->getAdvancedToken();
             } else {
-                //$node->addChild($this->parseExpression());
                 if ($child = $this->parseExpression()) {
                     $node->addChild($child);
                 }
@@ -107,6 +107,8 @@ class Parser
                 return $this->parseDoctype();
             case 'filter':
                 return $this->parseFilter();
+            case 'pipe':
+                return $this->parsePipe();
             case 'comment':
                 return $this->parseComment();
             case 'text':
@@ -121,10 +123,12 @@ class Parser
 
                 return $this->parseExpression();
             case 'outdent':
+            case 'indent':
+            case 'eos':
                 $this->lexer->getAdvancedToken();
                 return null;
             default:
-                throw new ParseException($this->lexer->getCurrentLine());
+                throw new UnknownTokenException($this->lexer->getCurrentLine());
                 return null;
         }
     }
@@ -157,7 +161,13 @@ class Parser
             $this->lexer->getAdvancedToken();
         }
 
-        if ('indent' === $this->lexer->predictToken()->type) {
+        if ($this->lexer->isProcessingVerbatimText()) {
+            $block = new BlockNode($this->lexer->getCurrentLine());
+            $block->addChild($this->parseTextBlock());
+            $node->setBlock($block);
+            $node->setVerbatimMode(true);
+        }
+        else if ('indent' === $this->lexer->predictToken()->type) {
             $node->setBlock($this->parseBlock());
         }
 
@@ -208,12 +218,8 @@ class Parser
         $block      = null;
         $token      = $this->expectTokenType('filter');
         $attributes = $this->acceptTokenType('attributes');
-
-        if ('text' === $this->lexer->predictToken(2)->type) {
-            $block = $this->parseTextBlock();
-        } else {
-            $block = $this->parseBlock();
-        }
+        
+        $block = $this->parseTextBlock();
 
         $node = new FilterNode(
             $token->value, null !== $attributes ? $attributes->attributes : array(), $this->lexer->getCurrentLine()
@@ -226,23 +232,38 @@ class Parser
     /**
      * Parse next indented? text token. 
      * 
-     * @return  TextToken
+     * @return  TextNode
      */
     protected function parseTextBlock()
     {
         $node = new TextNode(null, $this->lexer->getCurrentLine());
 
-        $this->expectTokenType('indent');
-        while ('text' === $this->lexer->predictToken()->type || 'newline' === $this->lexer->predictToken()->type) {
-            if ('newline' === $this->lexer->predictToken()->type) {
+        if ($this->lexer->predictToken()->type === 'text') {
+            $node->addLine(trim($this->lexer->getAdvancedToken()->value));
+        } else {
+            $this->expectTokenType('indent');
+        }
+        while ('text' === $this->lexer->predictToken()->type || 'indent' === $this->lexer->predictToken()->type) {
+            if ('indent' === $this->lexer->predictToken()->type) {
                 $this->lexer->getAdvancedToken();
             } else {
                 $node->addLine($this->lexer->getAdvancedToken()->value);
             }
         }
-        $this->expectTokenType('outdent');
+        //$this->expectTokenType('outdent');
 
         return $node;
+    }
+
+    /**
+     * Parse next pipe token. 
+     * 
+     * @return  TextNode
+     */
+    protected function parsePipe()
+    {
+        $this->expectTokenType('pipe');
+        return $this->parseTextBlock();
     }
 
     /**
@@ -255,14 +276,17 @@ class Parser
         $node = new BlockNode($this->lexer->getCurrentLine());
 
         $this->expectTokenType('indent');
-        while ('outdent' !== $this->lexer->predictToken()->type) {
+        while ('outdent' !== $this->lexer->predictToken()->type && 'eos' !== $this->lexer->predictToken()->type) {
             if ('newline' === $this->lexer->predictToken()->type) {
                 $this->lexer->getAdvancedToken();
             } else {
-                $node->addChild($this->parseExpression());
+                if ($child = $this->parseExpression()) {
+                    $node->addChild($child);
+                }
             }
         }
-        $this->expectTokenType('outdent');
+        //$this->expectTokenType('outdent');
+        $this->lexer->getAdvancedToken();
 
         return $node;
     }

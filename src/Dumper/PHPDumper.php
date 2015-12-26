@@ -332,27 +332,36 @@ class PHPDumper implements DumperInterface
             $visitor->visit($node);
         }
 
-        if ($node->getBlock()) {
-            if ($node->isBuffered()) {
-                $begin = '<?= ' . preg_replace('/^ +/', '', $node->getCode()) . " { ?>\n";
-            } else {
-                $begin = '<?php ' . preg_replace('/^ +/', '', $node->getCode()) . " { ?>\n";
-            }
-            $end = "\n" . str_repeat(' ', $level * $tabSize) . '<?php } ?>';
+        $block = $node->getBlock();
 
-            foreach ($this->codes as $regex => $ending) {
-                if (preg_match($regex, $node->getCode())) {
-                    $begin  = '<?php ' . preg_replace('/^ +| +$/', '', $node->getCode()) . " ?>\n";
-                    $end    = "\n" . str_repeat(' ', $level * $tabSize) . '<?php ' . $ending . '; ?>';
-                    if ('endif' === $ending && isset($this->nextIsIf[$level]) && $this->nextIsIf[$level]) {
-                        $end = '';
+        if ($block) {
+
+            if ($node->getVerbatimMode()) {
+                $begin = "<?php\n" . str_repeat(' ', ($level + 1) * $tabSize) . preg_replace('/^ +/', '', $node->getCode()) . "\n";
+                $end = "\n" . str_repeat(' ', $level * $tabSize) . '?>';
+            }
+            else {
+                if ($node->isBuffered()) {
+                    $begin = '<?= ' . preg_replace('/^ +/', '', $node->getCode()) . " { ?>\n";
+                } else {
+                    $begin = '<?php ' . preg_replace('/^ +/', '', $node->getCode()) . " { ?>\n";
+                }
+                $end = "\n" . str_repeat(' ', $level * $tabSize) . '<?php } ?>';
+
+                foreach ($this->codes as $regex => $ending) {
+                    if (preg_match($regex, $node->getCode())) {
+                        $begin  = '<?php ' . preg_replace('/^ +| +$/', '', $node->getCode()) . " ?>\n";
+                        $end    = "\n" . str_repeat(' ', $level * $tabSize) . '<?php ' . $ending . '; ?>';
+                        if ('endif' === $ending && isset($this->nextIsIf[$level]) && $this->nextIsIf[$level]) {
+                            $end = '';
+                        }
+                        break;
                     }
-                    break;
                 }
             }
 
             $html .= $begin;
-            $html .= $this->dumpNode($node->getBlock(), $level + 1);
+            $html .= $this->dumpNode($block, $level + 1);
             $html .= $end;
         } else {
             if ($node->isBuffered()) {
@@ -421,8 +430,14 @@ class PHPDumper implements DumperInterface
      */
     protected function replaceHolders($string, $decode = false)
     {
-        return preg_replace_callback("/{{((?!}}).*)}}/", function($matches) use($decode) {
+        $ret = preg_replace_callback("/^#{([^}]*)}/", function($matches) use($decode) {
             return sprintf('<?= %s ?>', $decode ? html_entity_decode($matches[1]) : $matches[1]);
         }, $string);
+
+        $ret = preg_replace_callback("/[^\\\\]#{([^}]*)}/", function($matches) use($decode) {
+            return sprintf('<?= %s ?>', $decode ? html_entity_decode($matches[1]) : $matches[1]);
+        }, $ret);
+
+        return preg_replace("/\\\\(#{[^}]*})/", "$1", $ret);
     }
 }

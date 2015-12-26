@@ -108,17 +108,50 @@ well cool, but how about large bodies of text:
 
 	p
 	  | foo bar baz
-	  | rawr rawr
-	  | super cool
-	  | go Slim go
+	  	rawr rawr
+	  	super cool
+	  	go Slim go
 
 renders `<p>foo bar baz rawr.....</p>`
 
-Actually want `<?= $something ?>` for some reason? Use `{{}}` instead:
+Actually want `<?= $something ?>` for some reason? Use `#{}` instead:
 
-	p {{$something}}
+	p #{$something}
 
 now we have `<p><?= $something ?></p>`
+
+What if you want to output `#{}` just as it is? You can escape the '#' character in this case:
+
+	p \#{$notSoSpecial}
+
+then we have `<p>#{$notSoSpecial}</p>`
+
+### Verbatim Text
+
+The pipe tells SlimPHP to just copy the line. It essentially escapes any processing. Each following line that is indented greater than the pipe is copied over.
+
+	body
+	  p
+	    | This line is on the left margin.
+	       This line will have one space in front of it.
+	         This line will have two spaces in front of it.
+	           And so on...
+
+### Inline html <
+
+You can write html tags directly in SlimPHP which allows you to write your templates in a more html like style with closing tags or mix html and Slim style. The leading < works like an implicit |:
+
+	<html>
+	  head
+	    title Example
+	  <body>
+	    - if ($articles):
+	    - else:
+	      table
+	        - foreach ($articles as $a):
+	          <tr><td>#{$a->name}</td><td>#{$a->description}</td></tr>
+	  </body>
+	</html>
 
 ### Nesting
 
@@ -259,9 +292,9 @@ at the top of this document for available filters.
 
 	body
 	  :php
-	    | $data = 40;
-	    | $data /= 2;
-	    | echo $data;
+	    $data = 40;
+	    $data /= 2;
+	    echo $data;
 
 Renders:
 

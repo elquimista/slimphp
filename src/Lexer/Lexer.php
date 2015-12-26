@@ -4,6 +4,7 @@ namespace clthck\SlimPHP\Lexer;
 
 use clthck\SlimPHP\Exception\Exception;
 use clthck\SlimPHP\Exception\ParseException;
+use clthck\SlimPHP\Exception\UnknownTokenException;
 
 /*
  * This file is part of the SlimPHP package.
@@ -19,11 +20,15 @@ use clthck\SlimPHP\Exception\ParseException;
 class Lexer implements LexerInterface
 {
     protected $input;
-    protected $deferredObjects   = array();
-    protected $lastIndents      = 0;
-    protected $indentCache      = [0];
-    protected $lineno           = 1;
-    protected $stash            = array();
+    protected $deferredObjects      = array();
+    protected $lastIndents          = 0;
+    protected $indentCache          = [0];
+    protected $lineno               = 1;
+    protected $stash                = array();
+
+    protected $isInVerbatimBlock    = false;
+    protected $verbatimBlockIndents = 0;        // verbatim wrapper's indents
+    protected $verbatimLineIndents  = 0;        // current line indent in verbatim block
 
     protected $options          = [
         'tabSize'           => 2,
@@ -45,12 +50,15 @@ class Lexer implements LexerInterface
      */
     public function setInput($input)
     {
-        $this->input            = trim(preg_replace(['/\r\n|\r/', '/\t/'], ["\n", str_repeat(' ', $this->options['tabSize'])], $input));
-        $this->deferredObjects  = array();
-        $this->lastIndents      = 0;
-        $this->indentCache      = [0];
-        $this->lineno           = 1;
-        $this->stash            = array();
+        $this->input                = trim(preg_replace(['/\r\n|\r/', '/\t/'], ["\n", str_repeat(' ', $this->options['tabSize'])], $input));
+        $this->deferredObjects      = array();
+        $this->lastIndents          = 0;
+        $this->indentCache          = [0];
+        $this->lineno               = 1;
+        $this->stash                = array();
+        $this->isInVerbatimBlock    = false;
+        $this->verbatimBlockIndents = 0;
+        $this->verbatimLineIndents = 0;
     }
 
     /**
@@ -143,6 +151,33 @@ class Lexer implements LexerInterface
     }
 
     /**
+     * Checks if token is a valid verbatim text wrapper or not.
+     * 
+     * @return  bool
+     */
+    protected function isTokenVerbatimWrapper($token)
+    {
+        if ($token->type == 'filter' || $token->type == 'pipe') {
+            return true;
+        }
+        if ($token->type == 'code' && preg_match("/\\\\$/", $token->value)) {
+            $token->value = preg_replace("/\\\\$/", '', $token->value);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * isProcessingVerbatimText()
+     * 
+     * @return  bool
+     */
+    public function isProcessingVerbatimText()
+    {
+        return $this->isInVerbatimBlock;
+    }
+
+    /**
      * Return next token. 
      * 
      * @return  Object
@@ -152,8 +187,11 @@ class Lexer implements LexerInterface
         $scanners = array(
             'getDeferredToken'
           , 'scanEOS'
+          , 'scanVerbatim'
           , 'scanDoctype'
           , 'scanTag'
+          , 'scanPipe'
+          , 'scanHtmlLikeStyle'
           , 'scanFilter'
           , 'scanCode'
           , 'scanId'
@@ -161,16 +199,22 @@ class Lexer implements LexerInterface
           , 'scanAttributes'
           , 'scanIndentation'
           , 'scanComment'
-          , 'scanText'
+          , 'scanText'              // inline text node
         );
 
         foreach ($scanners as $scan) {
             $token = $this->$scan();
 
             if (null !== $token && $token) {
+                if ($this->isTokenVerbatimWrapper($token)) {
+                    $this->isInVerbatimBlock = true;
+                    $this->verbatimBlockIndents = $this->lastIndents;
+                }
                 return $token;
             }
         }
+
+        throw new UnknownTokenException($this->lineno);
     }
 
     /**
@@ -197,7 +241,14 @@ class Lexer implements LexerInterface
         if (preg_match($regex, $this->input, $matches)) {
             $this->consumeInput(mb_strlen($matches[0]));
 
-            return $this->takeToken($type, count($matches) > 1 ? $matches[1] : null);
+            $value = null;
+            if (count($matches) > 1) {
+                $value = $matches[1];
+            }
+            if ($this->isInVerbatimBlock) {
+                $value = str_repeat(' ', $this->verbatimLineIndents) . $value;
+            }
+            return $this->takeToken($type, $value);
         }
     }
 
@@ -247,13 +298,36 @@ class Lexer implements LexerInterface
     }
 
     /**
-     * Scan tag from input & return it if found. 
+     * Scan filter from input & return it if found. 
      * 
      * @return  Object|null
      */
     protected function scanFilter()
     {
         return $this->scanInput('/^:(\w+)/', 'filter');
+    }
+
+    /**
+     * Scan pipe from input & return it if found. 
+     * 
+     * @return  Object|null
+     */
+    protected function scanPipe()
+    {
+        return $this->scanInput('/^\|/', 'pipe');
+    }
+
+    /**
+     * Scan implicit pipe from input & return it if found. This is for allowing html like style.
+     * 
+     * @return  Object|null
+     */
+    protected function scanHtmlLikeStyle()
+    {
+        if (preg_match('/^</', $this->input)) {
+            return $this->scanInput('/^(<[\w\/].*)/', 'text');
+        }
+        return null;
     }
 
     /**
@@ -293,7 +367,20 @@ class Lexer implements LexerInterface
      */
     protected function scanText()
     {
-        return $this->scanInput('/^(?:\|)? ?([^\n]+)/', 'text');
+        return $this->scanInput('/^ ([^\n]+)/', 'text');
+    }
+
+    /**
+     * Scan verbatim text from input & return it if found. 
+     * 
+     * @return  Object|null
+     */
+    protected function scanVerbatim()
+    {
+        if ($this->isInVerbatimBlock) {
+            return $this->scanInput('/^([^\n]+)/', 'text');
+        }
+        return null;
     }
 
     /**
@@ -403,6 +490,15 @@ class Lexer implements LexerInterface
 
             $token      = $this->takeToken('indent', $matches[1]);
             $indents    = mb_strlen($token->value);
+
+            if ($this->isInVerbatimBlock && $indents <= $this->verbatimBlockIndents) {
+                $this->isInVerbatimBlock = false;
+            }
+
+            if ($this->isInVerbatimBlock) {
+                $this->verbatimLineIndents = max($indents - $this->verbatimBlockIndents - $this->options['tabSize'], 0);
+                return $token;
+            }
 
             if ($indents > $this->lastIndents) {
                 if (!in_array($indents, $this->indentCache)) {

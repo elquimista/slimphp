@@ -18,6 +18,7 @@ class CodeNode extends Node
     protected $code;
     protected $buffering = false;
     protected $block;
+    protected $isVerbatimMode = false;
 
     /**
      * Initialize code node. 
@@ -26,12 +27,13 @@ class CodeNode extends Node
      * @param   boolean $buffering  turn on buffering
      * @param   integer $line       source line
      */
-    public function __construct($code, $buffering = false, $line)
+    public function __construct($code, $buffering = false, $line, $isVerbatimMode = false)
     {
         parent::__construct($line);
 
-        $this->code         = $code;
-        $this->buffering    = $buffering;
+        $this->code             = $code;
+        $this->buffering        = $buffering;
+        $this->isVerbatimMode   = $isVerbatimMode;
     }
 
     /**
@@ -72,5 +74,25 @@ class CodeNode extends Node
     public function getBlock()
     {
         return $this->block;
+    }
+
+    /**
+     * Set verbatim mode. 
+     * 
+     * @param   bool   $isVerbatimMode
+     */
+    public function setVerbatimMode($isVerbatimMode)
+    {
+        $this->isVerbatimMode = $isVerbatimMode;
+    }
+
+    /**
+     * Get verbatim mode. 
+     * 
+     * @return   bool
+     */
+    public function getVerbatimMode()
+    {
+        return $this->isVerbatimMode;
     }
 }
