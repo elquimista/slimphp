@@ -31,6 +31,7 @@ class Lexer implements LexerInterface
     protected $verbatimLineIndents  = 0;        // current line indent in verbatim block
 
     protected $lastToken            = null;
+    protected $placeHolderCounter   = 0;
 
     protected $options          = [
         'tabSize'           => 2,
@@ -62,6 +63,7 @@ class Lexer implements LexerInterface
         $this->verbatimBlockIndents = 0;
         $this->verbatimLineIndents  = 0;
         $this->lastToken            = null;
+        $this->placeHolderCounter   = 0;
     }
 
     /**
@@ -423,11 +425,17 @@ class Lexer implements LexerInterface
             $index      = $this->getDelimitersIndex('(', ')');
             $input      = preg_replace('/ *= */', '=', trim(mb_substr($this->input, 1, $index - 1)));
             $token      = $this->takeToken('attributes', $input);
+
             preg_match_all('/#{[^}]*}/', $input, $matches);
-            $attributes = $matches[0];
-            $input = trim(preg_replace('/#{[^}]*}/', '', $input));
+            $tmp = $matches[0];
+            $this->placeHolderCounter = -1;
+            $input = trim(preg_replace_callback('/#{[^}]*}/', function ($matches) {
+                $this->placeHolderCounter++;
+                return '{' . (int)$this->placeHolderCounter . '}';
+            }, $input));
             //$attributes = preg_split('/ *(?:,| ) *(?=[\'"\w\-]+ *[=]|[\w\-]+ *$)/', $token->value);
-            $attributes = array_merge($attributes, preg_split('/ *(?:,| ) */', $input));
+            $attributes = preg_split('/ *(?:,| ) */', $input);
+
             $this->consumeInput($index + 1);
             $token->attributes = [];
 
@@ -449,6 +457,9 @@ class Lexer implements LexerInterface
 
                 if (false === $equal) {
                     $key    = $pair;
+                    if (preg_match('/^{(\d+)}$/', $key, $matches)) {
+                        $key = $tmp[$matches[1]];
+                    }
                     $value  = true;
                 } else {
                     $splitter = $equal;
@@ -460,6 +471,8 @@ class Lexer implements LexerInterface
                         $value = true;
                     } elseif (empty($value) || 'null' === $value || 'false' === $value) {
                         $value = false;
+                    } elseif (preg_match('/^{(\d+)}$/', $value, $matches)) {
+                        $value = $tmp[$matches[1]];
                     }
                 }
 

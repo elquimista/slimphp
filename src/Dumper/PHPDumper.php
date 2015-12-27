@@ -410,7 +410,13 @@ class PHPDumper implements DumperInterface
 
         foreach ($attributes as $key => $value) {
             if (is_array($value)) {
-                $items[] = $key . '="' . $this->replaceHolders(htmlspecialchars(implode(' ', $value)), true) . '"';
+                $valueText = implode(' ', $value);
+                if (preg_match("/#{([^}]*)}/", $valueText)) {
+                    $valueText = preg_replace("/'/", '"', $valueText);
+                    $items[] = $key . "='" . $this->replaceHolders(htmlspecialchars($valueText), true) . "'";
+                } else {
+                    $items[] = $key . '="' . $this->replaceHolders(htmlspecialchars($valueText), true) . '"';
+                }
             } elseif (true === $value) {
                 if (preg_match("/#{([^}]*)}/", $key)) {
                     $items[] = $this->replaceHolders($key);
