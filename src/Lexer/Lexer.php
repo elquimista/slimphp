@@ -427,12 +427,29 @@ class Lexer implements LexerInterface
             $token      = $this->takeToken('attributes', $input);
 
             preg_match_all('/#{[^}]*}/', $input, $matches);
-            $tmp = $matches[0];
+            $placeHolders = $matches[0];
             $this->placeHolderCounter = -1;
             $input = trim(preg_replace_callback('/#{[^}]*}/', function ($matches) {
                 $this->placeHolderCounter++;
                 return '{' . (int)$this->placeHolderCounter . '}';
             }, $input));
+
+            preg_match_all('/"([^"]*)"/', $input, $matches);
+            $doubleQuotedValues = $matches[1];
+            $this->placeHolderCounter = -1;
+            $input = trim(preg_replace_callback('/"([^"]*)"/', function ($matches) {
+                $this->placeHolderCounter++;
+                return '{{' . (int)$this->placeHolderCounter . '}}';
+            }, $input));
+
+            preg_match_all("/'([^']*)'/", $input, $matches);
+            $singleQuotedValues = $matches[1];
+            $this->placeHolderCounter = -1;
+            $input = trim(preg_replace_callback("/'([^']*)'/", function ($matches) {
+                $this->placeHolderCounter++;
+                return '{{{' . (int)$this->placeHolderCounter . '}}}';
+            }, $input));
+
             //$attributes = preg_split('/ *(?:,| ) *(?=[\'"\w\-]+ *[=]|[\w\-]+ *$)/', $token->value);
             $attributes = preg_split('/ *(?:,| ) */', $input);
 
@@ -458,7 +475,11 @@ class Lexer implements LexerInterface
                 if (false === $equal) {
                     $key    = $pair;
                     if (preg_match('/^{(\d+)}$/', $key, $matches)) {
-                        $key = $tmp[$matches[1]];
+                        $key = $placeHolders[$matches[1]];
+                    } else if (preg_match('/^{{(\d+)}}$/', $key, $matches)) {
+                        $key = $doubleQuotedValues[$matches[1]];
+                    } else if (preg_match('/^{{{(\d+)}}}$/', $key, $matches)) {
+                        $key = $singleQuotedValues[$matches[1]];
                     }
                     $value  = true;
                 } else {
@@ -469,10 +490,14 @@ class Lexer implements LexerInterface
 
                     if ('true' === $value) {
                         $value = true;
-                    } elseif (empty($value) || 'null' === $value || 'false' === $value) {
+                    } else if (empty($value) || 'null' === $value || 'false' === $value) {
                         $value = false;
-                    } elseif (preg_match('/^{(\d+)}$/', $value, $matches)) {
-                        $value = $tmp[$matches[1]];
+                    } else if (preg_match('/^{(\d+)}$/', $value, $matches)) {
+                        $value = $placeHolders[$matches[1]];
+                    } else if (preg_match('/^{{(\d+)}}$/', $value, $matches)) {
+                        $value = $doubleQuotedValues[$matches[1]];
+                    } else if (preg_match('/^{{{(\d+)}}}$/', $value, $matches)) {
+                        $value = $singleQuotedValues[$matches[1]];
                     }
                 }
 
