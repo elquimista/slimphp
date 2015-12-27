@@ -337,7 +337,8 @@ class PHPDumper implements DumperInterface
         if ($block) {
 
             if ($node->getVerbatimMode()) {
-                $begin = "<?php\n" . str_repeat(' ', ($level + 1) * $tabSize) . preg_replace('/^ +/', '', $node->getCode()) . "\n";
+                $codeText = preg_replace("/\\\\$/", '', $node->getCode());
+                $begin = "<?php\n" . str_repeat(' ', ($level + 1) * $tabSize) . preg_replace('/^ +/', '', $codeText) . "\n";
                 $end = "\n" . str_repeat(' ', $level * $tabSize) . '?>';
             }
             else {
@@ -411,7 +412,11 @@ class PHPDumper implements DumperInterface
             if (is_array($value)) {
                 $items[] = $key . '="' . $this->replaceHolders(htmlspecialchars(implode(' ', $value)), true) . '"';
             } elseif (true === $value) {
-                $items[] = $key . '="' . $key . '"';
+                if (preg_match("/#{([^}]*)}/", $key)) {
+                    $items[] = $this->replaceHolders($key);
+                } else {
+                    $items[] = $key . '="' . $key . '"';
+                }
             } elseif (false !== $value) {
                 $items[] = $key . '="' . $this->replaceHolders(htmlspecialchars($value), true) . '"';
             }
@@ -434,8 +439,8 @@ class PHPDumper implements DumperInterface
             return sprintf('<?= %s ?>', $decode ? html_entity_decode($matches[1]) : $matches[1]);
         }, $string);
 
-        $ret = preg_replace_callback("/[^\\\\]#{([^}]*)}/", function($matches) use($decode) {
-            return sprintf('<?= %s ?>', $decode ? html_entity_decode($matches[1]) : $matches[1]);
+        $ret = preg_replace_callback("/([^\\\\])#{([^}]*)}/", function($matches) use($decode) {
+            return sprintf('%s<?= %s ?>', $matches[1], $decode ? html_entity_decode($matches[2]) : $matches[2]);
         }, $ret);
 
         return preg_replace("/\\\\(#{[^}]*})/", "$1", $ret);

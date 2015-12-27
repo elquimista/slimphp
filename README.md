@@ -162,13 +162,14 @@ You can write html tags directly in SlimPHP which allows you to write your templ
 
 ### Attributes
 
-Slim currently supports '(' and ')' as attribute delimiters.
+SlimPHP currently supports '(' and ')' as attribute indicator and colon(,) or space as delimitor.
 
-	a(href='/login', title='View login page') Login
+	a (href='/login', title='View login page' data-id="13") Login
 
-Alternatively we may use the colon to separate pairs:
+We need to escape opening parenthesis if it comes to the very beginning character of text node, otherwise no need to escape:
 
-	a(href: '/login', title: 'View login page') Login
+	a (href='/login', title='View login page') \(Login)
+	a (href='/login', title='View login page') Login (with Twitter)
 
 Boolean attributes are also supported:
 
@@ -176,7 +177,15 @@ Boolean attributes are also supported:
 
 Boolean attributes with code will only output the attribute when `true`:
 
-	input(type="checkbox", checked: someValue)
+	input(type="checkbox", checked=someValue)
+
+Another possibly awesome feature goes here:
+
+	input:checkbox (#{$user->isAdmin() ? 'checked' : ''} name=is_admin)
+
+Will render just as follows:
+
+	<input <?= $user->isAdmin() ? 'checked' : '' ?> name="is_admin" type="checkbox" />
 
 Note: Leading / trailing whitespace is _ignored_ for attr pairs.
 
@@ -362,3 +371,19 @@ Will be rendered to:
 But don't forget about colons `:` after instructions start (`- if(true) :`).
 
 There's bunch of default ones: `if`, `else`, `elseif`, `while`, `for`, `foreach`, `switch`, `case`.
+
+Here's another convenient way to write multiline PHP code block:
+
+	- $user = [ \
+		'username' 		=> 'clthck',
+		'first_name' 	=> 'Joey',
+	  ];
+
+This will be interpreted as:
+
+	<?php
+	    $user = [ 
+	      'username'     => 'clthck',
+	      'first_name'   => 'Joey',
+	    ];
+	?>

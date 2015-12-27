@@ -19,7 +19,7 @@ use clthck\SlimPHP\Node\TagNode;
 class AutotagsVisitor implements VisitorInterface
 {
     protected $autotags = array(
-        'a:void'                => array('tag' => 'a',      'attrs' => array('href' => 'javascript:void(0)')),
+        'a:void'                => array('tag' => 'a',      'attrs' => array('href' => 'javascript:;')),
         'form:post'             => array('tag' => 'form',   'attrs' => array('method' => 'POST')),
         'link:css'              => array('tag' => 'link',   'attrs' => array('rel' => 'stylesheet', 'type'  => 'text/css')),
         'script:js'             => array('tag' => 'script', 'attrs' => array('type'  => 'text/javascript')),

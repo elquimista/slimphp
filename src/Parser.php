@@ -161,7 +161,7 @@ class Parser
             $this->lexer->getAdvancedToken();
         }
 
-        if ($this->lexer->isProcessingVerbatimText()) {
+        if ($this->lexer->isTokenVerbatimWrapper($token)) {
             $block = new BlockNode($this->lexer->getCurrentLine());
             $block->addChild($this->parseTextBlock());
             $node->setBlock($block);

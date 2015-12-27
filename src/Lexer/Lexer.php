@@ -30,6 +30,8 @@ class Lexer implements LexerInterface
     protected $verbatimBlockIndents = 0;        // verbatim wrapper's indents
     protected $verbatimLineIndents  = 0;        // current line indent in verbatim block
 
+    protected $lastToken            = null;
+
     protected $options          = [
         'tabSize'           => 2,
     ];
@@ -58,7 +60,8 @@ class Lexer implements LexerInterface
         $this->stash                = array();
         $this->isInVerbatimBlock    = false;
         $this->verbatimBlockIndents = 0;
-        $this->verbatimLineIndents = 0;
+        $this->verbatimLineIndents  = 0;
+        $this->lastToken            = null;
     }
 
     /**
@@ -156,7 +159,7 @@ class Lexer implements LexerInterface
      * @param   Object $token
      * @return  bool
      */
-    protected function isTokenVerbatimWrapper($token)
+    public function isTokenVerbatimWrapper($token)
     {
         if ($token->type == 'filter' || $token->type == 'pipe') {
             return true;
@@ -164,21 +167,10 @@ class Lexer implements LexerInterface
         if ($token->type == 'comment' && !$token->buffer) {
             return true;
         }
-        if ($token->type == 'code' && preg_match("/\\\\$/", $token->value)) {
-            $token->value = preg_replace("/\\\\$/", '', $token->value);
+        if ($token->type == 'code' && !$token->buffer && preg_match("/\\\\$/", $token->value)) {
             return true;
         }
         return false;
-    }
-
-    /**
-     * isProcessingVerbatimText()
-     * 
-     * @return  bool
-     */
-    public function isProcessingVerbatimText()
-    {
-        return $this->isInVerbatimBlock;
     }
 
     /**
@@ -214,6 +206,7 @@ class Lexer implements LexerInterface
                     $this->isInVerbatimBlock = true;
                     $this->verbatimBlockIndents = $this->lastIndents;
                 }
+                $this->lastToken = $token;
                 return $token;
             }
         }
@@ -371,7 +364,18 @@ class Lexer implements LexerInterface
      */
     protected function scanText()
     {
-        return $this->scanInput('/^ ([^\n]+)/', 'text');
+        if ($this->lastToken->type == 'tag'
+            || $this->lastToken->type == 'filter'
+            || $this->lastToken->type == 'pipe'
+            || $this->lastToken->type == 'attributes'
+            || $this->lastToken->type == 'class'
+            || $this->lastToken->type == 'id'
+        ) {
+            $token = $this->scanInput('/([^\n]+)/', 'text');
+            $token->value = preg_replace("/ *\\\\\(/", '(', $token->value);
+            return $token;
+        }
+        return null;
     }
 
     /**
@@ -414,17 +418,21 @@ class Lexer implements LexerInterface
      */
     protected function scanAttributes()
     {
-        if ('(' === $this->input[0]) {
+        if (preg_match('/^ *\(.+\)/', $this->input)) {
+            $this->input = trim($this->input);
             $index      = $this->getDelimitersIndex('(', ')');
-            $input      = mb_substr($this->input, 1, $index - 1);
+            $input      = preg_replace('/ *= */', '=', trim(mb_substr($this->input, 1, $index - 1)));
             $token      = $this->takeToken('attributes', $input);
-            $attributes = preg_split('/ *, *(?=[\'"\w\-]+ *[:=]|[\w\-]+ *$)/', $token->value);
+            preg_match_all('/#{[^}]*}/', $input, $matches);
+            $attributes = $matches[0];
+            $input = trim(preg_replace('/#{[^}]*}/', '', $input));
+            //$attributes = preg_split('/ *(?:,| ) *(?=[\'"\w\-]+ *[=]|[\w\-]+ *$)/', $token->value);
+            $attributes = array_merge($attributes, preg_split('/ *(?:,| ) */', $input));
             $this->consumeInput($index + 1);
             $token->attributes = array();
 
             foreach ($attributes as $pair) {
                 $pair = preg_replace('/^ *| *$/', '', $pair);
-                $colon = mb_strpos($pair, ':');
                 $equal = mb_strpos($pair, '=');
 
                 $sbrac = mb_strpos($pair, '\'');
@@ -435,22 +443,15 @@ class Lexer implements LexerInterface
                 if ($dbrac < 1) {
                     $dbrac = false;
                 }
-                if ((false !== $sbrac && $colon > $sbrac) || (false !== $dbrac && $colon > $dbrac)) {
-                    $colon = false;
-                }
                 if ((false !== $sbrac && $equal > $sbrac) || (false !== $dbrac && $equal > $dbrac)) {
                     $equal = false;
                 }
 
-                if (false === $colon && false === $equal) {
+                if (false === $equal) {
                     $key    = $pair;
                     $value  = true;
                 } else {
-                    $splitter = false !== $colon ? $colon : $equal;
-
-                    if (false !== $colon && $colon < $equal) {
-                        $splitter = $colon;
-                    }
+                    $splitter = $equal;
 
                     $key    = mb_substr($pair, 0, $splitter);
                     $value  = preg_replace('/^ *[\'"]?|[\'"]? *$/', '', mb_substr($pair, ++$splitter, mb_strlen($pair)));
@@ -495,6 +496,10 @@ class Lexer implements LexerInterface
             $token      = $this->takeToken('indent', $matches[1]);
             $indents    = mb_strlen($token->value);
 
+            if ($this->isInVerbatimBlock && mb_strlen($this->input) && "\n" === $this->input[0]) {
+                return $token;
+            }
+
             if ($this->isInVerbatimBlock && $indents <= $this->verbatimBlockIndents) {
                 $this->isInVerbatimBlock = false;
             }
@@ -512,7 +517,6 @@ class Lexer implements LexerInterface
 
             if (mb_strlen($this->input) && "\n" === $this->input[0]) {
                 $token->type = 'newline';
-
                 return $token;
             } elseif ($this->lastIndents === $indents) {
                 $token->type = 'newline';
