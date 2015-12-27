@@ -16,7 +16,7 @@ namespace clthck\SlimPHP\Node;
 class TagNode extends BlockNode
 {
     protected $name;
-    protected $attributes = array('id' => false);
+    protected $attributes = ['id' => false];
     protected $text;
     protected $code;
 
@@ -63,7 +63,7 @@ class TagNode extends BlockNode
     {
         if ('class' === $key) {
             if (!isset($this->attributes[$key])) {
-                $this->attributes[$key] = array();
+                $this->attributes[$key] = [];
             }
 
             $this->attributes[$key][] = $value;

@@ -27,7 +27,7 @@
     $dumper->registerFilter('javascript', new JavaScriptFilter());
     $dumper->registerFilter('cdata', new CDATAFilter());
     $dumper->registerFilter('php', new PHPFilter());
-    $dumper->registerFilter('style', new CSSFilter());
+    $dumper->registerFilter('css', new CSSFilter());
     
     // Initialize parser & SlimPHP
     $parser = new Parser(new Lexer([

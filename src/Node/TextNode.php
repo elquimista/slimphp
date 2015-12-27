@@ -15,7 +15,7 @@ namespace clthck\SlimPHP\Node;
  */
 class TextNode extends Node
 {
-    protected $lines = array();
+    protected $lines = [];
 
     /**
      * Initialize text node with string. 

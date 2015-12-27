@@ -229,7 +229,7 @@ class Parser
         $block = $this->parseTextBlock();
 
         $node = new FilterNode(
-            $token->value, null !== $attributes ? $attributes->attributes : array(), $this->lexer->getCurrentLine()
+            $token->value, null !== $attributes ? $attributes->attributes : [], $this->lexer->getCurrentLine()
         );
         $node->setBlock($block);
 

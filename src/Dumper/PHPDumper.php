@@ -29,7 +29,7 @@ use clthck\SlimPHP\Node\CodeNode;
  */
 class PHPDumper implements DumperInterface
 {
-    protected $doctypes = array(
+    protected $doctypes = [
         'xml'               => '<?xml version="1.0" encoding="utf-8" ?>',
         'xml ISO-8859-1'    => '<?xml version="1.0" encoding="iso-8859-1" ?>',
         'html'          => '<!DOCTYPE html>',
@@ -40,9 +40,9 @@ class PHPDumper implements DumperInterface
         'mobile'        => '<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" "http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">',
         'basic'         => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN" "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">',
         'transitional'  => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
-    );
-    protected $selfClosing = array('meta', 'img', 'link', 'br', 'hr', 'input', 'area', 'base');
-    protected $codes = array(
+    ];
+    protected $selfClosing = ['meta', 'img', 'link', 'br', 'hr', 'input', 'area', 'base'];
+    protected $codes = [
         "/^ *if[ \(]+.*\: *$/"        => 'endif',
         "/^ *else *\: *$/"            => 'endif',
         "/^ *else *if[ \(]+.*\: *$/"  => 'endif',
@@ -51,17 +51,17 @@ class PHPDumper implements DumperInterface
         "/^ *foreach[ \(]+.*\: *$/"   => 'endforeach',
         "/^ *switch[ \(]+.*\: *$/"    => 'endswitch',
         "/^ *case *.* *\: *$/"        => 'break'
-    );
-    protected $nextIsIf = array();
-    protected $visitors = array(
-        'code'      => array()
-      , 'comment'   => array()
-      , 'doctype'   => array()
-      , 'filter'    => array()
-      , 'tag'       => array()
-      , 'text'      => array()
-    );
-    protected $filters = array();
+    ];
+    protected $nextIsIf = [];
+    protected $visitors = [
+        'code'      => []
+      , 'comment'   => []
+      , 'doctype'   => []
+      , 'filter'    => []
+      , 'tag'       => []
+      , 'text'      => []
+    ];
+    protected $filters = [];
 
     protected $options = [
         'tabSize'           => 2,
@@ -406,7 +406,7 @@ class PHPDumper implements DumperInterface
      */
     protected function dumpAttributes(array $attributes)
     {
-        $items = array();
+        $items = [];
 
         foreach ($attributes as $key => $value) {
             if (is_array($value)) {

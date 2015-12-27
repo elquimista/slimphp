@@ -18,35 +18,35 @@ use clthck\SlimPHP\Node\TagNode;
  */
 class AutotagsVisitor implements VisitorInterface
 {
-    protected $autotags = array(
-        'a:void'                => array('tag' => 'a',      'attrs' => array('href' => 'javascript:;')),
-        'form:post'             => array('tag' => 'form',   'attrs' => array('method' => 'POST')),
-        'link:css'              => array('tag' => 'link',   'attrs' => array('rel' => 'stylesheet', 'type'  => 'text/css')),
-        'script:js'             => array('tag' => 'script', 'attrs' => array('type'  => 'text/javascript')),
-        'input:button'          => array('tag' => 'input',  'attrs' => array('type' => 'button')),
-        'input:checkbox'        => array('tag' => 'input',  'attrs' => array('type' => 'checkbox')),
-        'input:file'            => array('tag' => 'input',  'attrs' => array('type' => 'file')),
-        'input:hidden'          => array('tag' => 'input',  'attrs' => array('type' => 'hidden')),
-        'input:image'           => array('tag' => 'input',  'attrs' => array('type' => 'image')),
-        'input:password'        => array('tag' => 'input',  'attrs' => array('type' => 'password')),
-        'input:radio'           => array('tag' => 'input',  'attrs' => array('type' => 'radio')),
-        'input:reset'           => array('tag' => 'input',  'attrs' => array('type' => 'reset')),
-        'input:submit'          => array('tag' => 'input',  'attrs' => array('type' => 'submit')),
-        'input:text'            => array('tag' => 'input',  'attrs' => array('type' => 'text')),
-        'input:search'          => array('tag' => 'input',  'attrs' => array('type' => 'search')),
-        'input:tel'             => array('tag' => 'input',  'attrs' => array('type' => 'tel')),
-        'input:url'             => array('tag' => 'input',  'attrs' => array('type' => 'url')),
-        'input:email'           => array('tag' => 'input',  'attrs' => array('type' => 'email')),
-        'input:datetime'        => array('tag' => 'input',  'attrs' => array('type' => 'datetime')),
-        'input:date'            => array('tag' => 'input',  'attrs' => array('type' => 'date')),
-        'input:month'           => array('tag' => 'input',  'attrs' => array('type' => 'month')),
-        'input:week'            => array('tag' => 'input',  'attrs' => array('type' => 'week')),
-        'input:time'            => array('tag' => 'input',  'attrs' => array('type' => 'time')),
-        'input:number'          => array('tag' => 'input',  'attrs' => array('type' => 'number')),
-        'input:range'           => array('tag' => 'input',  'attrs' => array('type' => 'range')),
-        'input:color'           => array('tag' => 'input',  'attrs' => array('type' => 'color')),
-        'input:datetime-local'  => array('tag' => 'input',  'attrs' => array('type'  => 'datetime-local'))
-    );
+    protected $autotags = [
+        'a:void'                => ['tag' => 'a',      'attrs' => ['href' => 'javascript:;']],
+        'form:post'             => ['tag' => 'form',   'attrs' => ['method' => 'POST']],
+        'link:css'              => ['tag' => 'link',   'attrs' => ['rel' => 'stylesheet', 'type'  => 'text/css']],
+        'script:js'             => ['tag' => 'script', 'attrs' => ['type'  => 'text/javascript']],
+        'input:button'          => ['tag' => 'input',  'attrs' => ['type' => 'button']],
+        'input:checkbox'        => ['tag' => 'input',  'attrs' => ['type' => 'checkbox']],
+        'input:file'            => ['tag' => 'input',  'attrs' => ['type' => 'file']],
+        'input:hidden'          => ['tag' => 'input',  'attrs' => ['type' => 'hidden']],
+        'input:image'           => ['tag' => 'input',  'attrs' => ['type' => 'image']],
+        'input:password'        => ['tag' => 'input',  'attrs' => ['type' => 'password']],
+        'input:radio'           => ['tag' => 'input',  'attrs' => ['type' => 'radio']],
+        'input:reset'           => ['tag' => 'input',  'attrs' => ['type' => 'reset']],
+        'input:submit'          => ['tag' => 'input',  'attrs' => ['type' => 'submit']],
+        'input:text'            => ['tag' => 'input',  'attrs' => ['type' => 'text']],
+        'input:search'          => ['tag' => 'input',  'attrs' => ['type' => 'search']],
+        'input:tel'             => ['tag' => 'input',  'attrs' => ['type' => 'tel']],
+        'input:url'             => ['tag' => 'input',  'attrs' => ['type' => 'url']],
+        'input:email'           => ['tag' => 'input',  'attrs' => ['type' => 'email']],
+        'input:datetime'        => ['tag' => 'input',  'attrs' => ['type' => 'datetime']],
+        'input:date'            => ['tag' => 'input',  'attrs' => ['type' => 'date']],
+        'input:month'           => ['tag' => 'input',  'attrs' => ['type' => 'month']],
+        'input:week'            => ['tag' => 'input',  'attrs' => ['type' => 'week']],
+        'input:time'            => ['tag' => 'input',  'attrs' => ['type' => 'time']],
+        'input:number'          => ['tag' => 'input',  'attrs' => ['type' => 'number']],
+        'input:range'           => ['tag' => 'input',  'attrs' => ['type' => 'range']],
+        'input:color'           => ['tag' => 'input',  'attrs' => ['type' => 'color']],
+        'input:datetime-local'  => ['tag' => 'input',  'attrs' => ['type'  => 'datetime-local']]
+    ];
 
     /**
      * Visit node. 

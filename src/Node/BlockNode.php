@@ -15,7 +15,7 @@ namespace clthck\SlimPHP\Node;
  */
 class BlockNode extends Node
 {
-    protected $childs = array();
+    protected $childs = [];
 
     /**
      * Add child node. 

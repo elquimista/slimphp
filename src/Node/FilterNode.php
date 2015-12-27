@@ -16,7 +16,7 @@ namespace clthck\SlimPHP\Node;
 class FilterNode extends Node
 {
     protected $name;
-    protected $attributes = array();
+    protected $attributes = [];
     protected $block;
 
     /**
@@ -26,7 +26,7 @@ class FilterNode extends Node
      * @param   array   $attributes filter attributes
      * @param   integer $line       source line
      */
-    public function __construct($name, array $attributes = array(), $line)
+    public function __construct($name, array $attributes = [], $line)
     {
         parent::__construct($line);
 

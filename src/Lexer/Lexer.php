@@ -20,11 +20,11 @@ use clthck\SlimPHP\Exception\UnknownTokenException;
 class Lexer implements LexerInterface
 {
     protected $input;
-    protected $deferredObjects      = array();
+    protected $deferredObjects      = [];
     protected $lastIndents          = 0;
     protected $indentCache          = [0];
     protected $lineno               = 1;
-    protected $stash                = array();
+    protected $stash                = [];
 
     protected $isInVerbatimBlock    = false;
     protected $verbatimBlockIndents = 0;        // verbatim wrapper's indents
@@ -53,11 +53,11 @@ class Lexer implements LexerInterface
     public function setInput($input)
     {
         $this->input                = trim(preg_replace(['/\r\n|\r/', '/\t/'], ["\n", str_repeat(' ', $this->options['tabSize'])], $input));
-        $this->deferredObjects      = array();
+        $this->deferredObjects      = [];
         $this->lastIndents          = 0;
         $this->indentCache          = [0];
         $this->lineno               = 1;
-        $this->stash                = array();
+        $this->stash                = [];
         $this->isInVerbatimBlock    = false;
         $this->verbatimBlockIndents = 0;
         $this->verbatimLineIndents  = 0;
@@ -126,11 +126,11 @@ class Lexer implements LexerInterface
      */
     public function takeToken($type, $value = null)
     {
-        return (Object) array(
+        return (Object) [
             'type'  => $type
           , 'line'  => $this->lineno
           , 'value' => $value
-        );
+        ];
     }
 
     /**
@@ -180,7 +180,7 @@ class Lexer implements LexerInterface
      */
     protected function getNextToken()
     {
-        $scanners = array(
+        $scanners = [
             'getDeferredToken'
           , 'scanEOS'
           , 'scanVerbatim'
@@ -196,7 +196,7 @@ class Lexer implements LexerInterface
           , 'scanAttributes'
           , 'scanIndentation'
           , 'scanText'              // inline text node
-        );
+        ];
 
         foreach ($scanners as $scan) {
             $token = $this->$scan();
@@ -234,7 +234,7 @@ class Lexer implements LexerInterface
      */
     protected function scanInput($regex, $type)
     {
-        $matches = array();
+        $matches = [];
         if (preg_match($regex, $this->input, $matches)) {
             $this->consumeInput(mb_strlen($matches[0]));
 
@@ -273,7 +273,7 @@ class Lexer implements LexerInterface
      */
     protected function scanComment()
     {
-        $matches = array();
+        $matches = [];
 
         if (preg_match('/^ *\/(\!)?([^\n]+)?/', $this->input, $matches)) {
             $this->consumeInput(mb_strlen($matches[0]));
@@ -398,7 +398,7 @@ class Lexer implements LexerInterface
      */
     protected function scanCode()
     {
-        $matches = array();
+        $matches = [];
 
         if (preg_match('/^(!?=|-)([^\n]+)/', $this->input, $matches)) {
             $this->consumeInput(mb_strlen($matches[0]));
@@ -429,7 +429,7 @@ class Lexer implements LexerInterface
             //$attributes = preg_split('/ *(?:,| ) *(?=[\'"\w\-]+ *[=]|[\w\-]+ *$)/', $token->value);
             $attributes = array_merge($attributes, preg_split('/ *(?:,| ) */', $input));
             $this->consumeInput($index + 1);
-            $token->attributes = array();
+            $token->attributes = [];
 
             foreach ($attributes as $pair) {
                 $pair = preg_replace('/^ *| *$/', '', $pair);
@@ -463,7 +463,7 @@ class Lexer implements LexerInterface
                     }
                 }
 
-                $token->attributes[preg_replace(array('/^ +| +$/', '/^[\'"]|[\'"]$/'), '', $key)] = $value;
+                $token->attributes[preg_replace( ['/^ +| +$/', '/^[\'"]|[\'"]$/'], '', $key )] = $value;
             }
 
             return $token;
@@ -487,7 +487,7 @@ class Lexer implements LexerInterface
      */
     protected function scanIndentation()
     {
-        $matches = array();
+        $matches = [];
 
         if (preg_match('/^\n( *)/', $this->input, $matches)) {
             $this->lineno++;
