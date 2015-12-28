@@ -156,7 +156,8 @@ class PHPDumper implements DumperInterface
                 $html .= "\n";
             }
 
-            $this->nextIsIf[$level] = isset($childs[$i + 1]) && ($childs[$i + 1] instanceof CodeNode);
+            $this->nextIsIf[$level] = isset($childs[$i + 1]) && ($childs[$i + 1] instanceof CodeNode) 
+                && (($childs[$i + 1]->getPhpAlternateControlStructure() == 'else') || ($childs[$i + 1]->getPhpAlternateControlStructure() == 'else if'));
             $last  = $this->dumpNode($child, $level);
             $html .= $last;
         }

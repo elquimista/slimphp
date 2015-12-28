@@ -95,4 +95,38 @@ class CodeNode extends Node
     {
         return $this->isVerbatimMode;
     }
+
+    /**
+     * Get code alternate syntax for control structures. 
+     * 
+     * @return   string
+     */
+    public function getPhpAlternateControlStructure()
+    {
+        if (preg_match('/^ *if[ \(]+.*\: *$/', $this->code)) {
+            return 'if';
+        }
+        if (preg_match('/^ *else *\: *$/', $this->code)) {
+            return 'else';
+        }
+        if (preg_match('/^ *else *if[ \(]+.*\: *$/', $this->code)) {
+            return 'else if';
+        }
+        if (preg_match('/^ *while *.*\: *$/', $this->code)) {
+            return 'while';
+        }
+        if (preg_match('/^ *for[ \(]+.*\: *$/', $this->code)) {
+            return 'for';
+        }
+        if (preg_match('/^ *foreach[ \(]+.*\: *$/', $this->code)) {
+            return 'foreach';
+        }
+        if (preg_match('/^ *switch[ \(]+.*\: *$/', $this->code)) {
+            return 'switch';
+        }
+        if (preg_match('/^ *case *.* *\: *$/', $this->code)) {
+            return 'case';
+        }
+        return '';
+    }
 }

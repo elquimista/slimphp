@@ -3,7 +3,7 @@ src/api
 /vendor/
 
 /tests/1.php
-/tests/index.slim
+/tests/index.php.slim
 /tests/index.ctp
 /composer.lock
 /.vs/
